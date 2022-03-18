@@ -43,7 +43,7 @@ public class SchedulerJobService implements ScheduleService {
         return scheduler.getMetaData();
     }
 
-    @SuppressWarnings("unchecked")
+
     private boolean scheduleNewJob(JobScheduleInfo jobInfo) {
         boolean result = Boolean.FALSE;
         try {
