@@ -1,6 +1,7 @@
 package org.scheduler.annotaion;
 
 
+import org.scheduler.config.AnnotationScanConfig;
 import org.scheduler.config.SchedulingRegistrar;
 import org.springframework.context.annotation.Import;
 
@@ -11,7 +12,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@Import(SchedulingRegistrar.class)
+@Import({AnnotationScanConfig.class,SchedulingRegistrar.class})
 public @interface EnableJobScheduling {
 
     String basePackage() default "";
