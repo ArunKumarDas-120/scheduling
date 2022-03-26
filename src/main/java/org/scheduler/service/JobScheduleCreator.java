@@ -12,25 +12,27 @@ import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Map;
+import java.util.Objects;
 
 public final class JobScheduleCreator {
 
-    protected static JobDetail createJob(Class<? extends QuartzJobBean> jobClass, boolean isDurable,
-                               ApplicationContext context, String jobName, String jobGroup) {
+    public static JobDetail createJob(Class<? extends QuartzJobBean> jobClass, boolean isDurable,
+                                      ApplicationContext context, String jobName, String jobGroup,
+                                      Map<String, Object> jobDataMap) {
         JobDetailFactoryBean factoryBean = new JobDetailFactoryBean();
         factoryBean.setJobClass(jobClass);
         factoryBean.setDurability(isDurable);
         factoryBean.setApplicationContext(context);
         factoryBean.setName(jobName);
         factoryBean.setGroup(jobGroup);
-        JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put(jobName + jobGroup, jobClass.getName());
-        factoryBean.setJobDataMap(jobDataMap);
+        if (Objects.nonNull(jobDataMap))
+            factoryBean.setJobDataMap(new JobDataMap(jobDataMap));
         factoryBean.afterPropertiesSet();
         return factoryBean.getObject();
     }
 
-    protected static CronTrigger createCronTrigger(String triggerName, Date startTime, String cronExpression, int misFireInstruction) {
+    public static CronTrigger createCronTrigger(String triggerName, Date startTime, String cronExpression, int misFireInstruction) {
         CronTriggerFactoryBean factoryBean = new CronTriggerFactoryBean();
         factoryBean.setName(triggerName);
         factoryBean.setStartTime(startTime);
@@ -44,7 +46,7 @@ public final class JobScheduleCreator {
         return factoryBean.getObject();
     }
 
-    protected static SimpleTrigger createSimpleTrigger(String triggerName, Date startTime, Long repeatTime, int misFireInstruction) {
+    public static SimpleTrigger createSimpleTrigger(String triggerName, Date startTime, Long repeatTime, int misFireInstruction) {
         SimpleTriggerFactoryBean factoryBean = new SimpleTriggerFactoryBean();
         factoryBean.setName(triggerName);
         factoryBean.setStartTime(startTime);

@@ -16,7 +16,7 @@ public @interface JobSchedule {
 
     String jobName();
 
-    String cornExpression() default "";
+    String cornExpression() default "" ;
 
     String simpleJob() default "";
 
@@ -24,5 +24,7 @@ public @interface JobSchedule {
 
     String timeZone() default "";
 
-    int repeat() default 0;
+    int repeat() default 0 ;
+
+    String jobData() default "";
 }
