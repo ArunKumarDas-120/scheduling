@@ -5,5 +5,5 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ComponentScan(basePackages = {"org.scheduler"})
-public class AnnotationScanConfig {
+public interface AnnotationScanConfig {
 }

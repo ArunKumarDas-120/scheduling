@@ -15,6 +15,6 @@ import java.lang.annotation.Target;
 @Import({AnnotationScanConfig.class,SchedulingRegistrar.class})
 public @interface EnableJobScheduling {
 
-    String basePackage() default "";
+    String packageToScan() default "";
 
 }
