@@ -13,6 +13,7 @@ Quartz dynamic scheduling
 <details><summary>How To pass job Data</summary>
   
   * @JobSchedule(jobGroup = "group", jobName = "name", cornExpression = "*/5 * * * * ? *", jobData = "{\"YY\" : 1 , \"xxx\" : \"zzz\"}")
+  * schedule.job.propGroup.scheduleinfo={"cronExpression": "exp","jobName": "someJob","jobClass": "jobClass", "jobDataMap" : {"key": "value"}}
   
 </details>
 
