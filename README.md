@@ -1,6 +1,6 @@
 #### Info
 Quartz dynamic scheduling
-***
+
 <details><summary>How To use</summary>
   
   * Create a jobClass by extending QuartzJobBean
@@ -9,7 +9,7 @@ Quartz dynamic scheduling
   
 </details>
 
- ***
+
 <details><summary>How To pass job Data</summary>
   
   * @JobSchedule(jobGroup = "group", jobName = "name", cornExpression = "*/5 * * * * ? *", jobData = "{\"YY\" : 1 , \"xxx\" : \"zzz\"}")
@@ -17,26 +17,28 @@ Quartz dynamic scheduling
   
 </details>
 
-***
+
 <details><summary>Configure Using Property</summary>
   
   * Create a jobClass by extending QuartzJobBean
   * One job group can contain multiple job
   * Add below properties in application.properties or any other property
-    * job.scheduler.jobConfig.[group][0].cronExpression=*/5 * * * * ? *
-    * job.scheduler.jobConfig.[group][0].jobName=someJob1
-    * job.scheduler.jobConfig.[group][0].jobClass=com.scheduling.job.SomeJob1
-    * job.scheduler.jobConfig.[group][0].jobDataMap[key]=value
-    
-    * job.scheduler.jobConfig.[group][1].cronExpression=*/5 * * * * ? *
-    * job.scheduler.jobConfig.[group][1].jobName=someJob
-    * job.scheduler.jobConfig.[group][1].jobClass=com.scheduling.job.SomeJob
-    * job.scheduler.jobConfig.[group][1].jobDataMap[key]=value
-    
-    * job.scheduler.jobConfig.[group1][1].cronExpression=*/5 * * * * ? *
-    * job.scheduler.jobConfig.[group1][1].jobName=someJob
-    * job.scheduler.jobConfig.[group1][1].jobClass=com.scheduling.job.SomeJob
-    * job.scheduler.jobConfig.[group1][1].jobDataMap[key]=value
+  
+    <p>
+       job.scheduler.jobConfig.[group][0].cronExpression=*/5 * * * * ? * <br/>
+       job.scheduler.jobConfig.[group][0].jobName=someJob <br/>
+       job.scheduler.jobConfig.[group][0].jobClass=com.scheduling.job.SomeJob <br/>
+       job.scheduler.jobConfig.[group][0].jobDataMap[key]=value <br/>
+       job.scheduler.jobConfig.[group][1].cronExpression=*/5 * * * * ? * <br/>
+       job.scheduler.jobConfig.[group][1].jobName=someJob <br/>
+       job.scheduler.jobConfig.[group][1].jobClass=com.scheduling.job.SomeJob <br/>
+       job.scheduler.jobConfig.[group][1].jobDataMap[key]=value <br/>
+      <br/>
+       job.scheduler.jobConfig.[group1][0].cronExpression=*/5 * * * * ? * <br/>
+       job.scheduler.jobConfig.[group1][0].jobName=someJob <br/>
+       job.scheduler.jobConfig.[group1][0].jobClass=com.scheduling.job.SomeJob <br/>
+       job.scheduler.jobConfig.[group1][0].jobDataMap[key]=value <br/>
+    </p>
     
   * above properties indicate two jobgroup **group** and **group1**. fist group contains two job , and second group contains one 
   
