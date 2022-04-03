@@ -28,15 +28,19 @@ public class StartSchedule {
     @Autowired
     private SchedulerFactoryBean schedulerFactoryBean;
     @Autowired(required = false)
-    private JobDataMapConfigurer configurer;
+    Map<String, JobDataMapConfigurer> configurerMap;
 
 
     private void startSchedule() {
         Set<JobScheduleInfo> jobInfoSet = (Set<JobScheduleInfo>) applicationContext.getBean("jobRegistry");
         jobInfoSet.forEach(j -> {
             Map<String, Object> dataMap = null;
-            if (Objects.nonNull(configurer))
-                dataMap = configurer.configure(j.getJobName(), j.getJobGroup());
+            JobDataMapConfigurer configurer = null;
+            if (Objects.nonNull(configurerMap)) {
+                configurer = configurerMap.get(j.getJobName());
+                if (Objects.nonNull(configurer))
+                    dataMap = configurer.configure(j.getJobName(), j.getJobGroup());
+            }
 
             if (Objects.nonNull(dataMap)) {
                 if (Objects.nonNull(j.getJobDataMap()))

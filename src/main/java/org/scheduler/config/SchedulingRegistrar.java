@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.scheduler.annotaion.EnableJobScheduling;
 import org.scheduler.annotaion.JobSchedule;
+import org.scheduler.model.JobMetaData;
 import org.scheduler.model.JobScheduleInfo;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.boot.context.properties.bind.BindResult;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -31,8 +34,6 @@ import java.util.Set;
 
 @Slf4j
 public class SchedulingRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware {
-
-    private final String SPLIT_BY = "~";
 
     private Environment environment;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -75,28 +76,17 @@ public class SchedulingRegistrar implements ImportBeanDefinitionRegistrar, Envir
 
             }
         }
-        String jobGroups = environment.getProperty("schedule.job.groups");
-        if (Objects.nonNull(jobGroups)) {
-            Arrays.stream(jobGroups.split(SPLIT_BY)).forEach(jobGroup -> {
-                String schedule = environment.getProperty(String.format("schedule.job.%s.scheduleinfo", jobGroup));
-                if (Objects.nonNull(schedule)) {
-                    log.info("Schedule info found for job group {}", jobGroup);
-                    Arrays.stream(schedule.split(SPLIT_BY))
-                            .forEach(scheduleInfo -> {
-                                try {
-                                    JobScheduleInfo info = mapper.readValue(scheduleInfo, JobScheduleInfo.class);
-                                    info.setJobGroup(jobGroup);
-                                    this.configureJob(jobs, info);
-                                    log.info("Schedule info found for job name {}", info.getJobName());
-                                } catch (JsonProcessingException e) {
-                                    log.error("error in creating schedule", e);
-                                }
 
-                            });
+
+        BindResult<JobMetaData> bindingResult = Binder.get(this.environment).bind("job.scheduler", JobMetaData.class);
+        if (bindingResult.isBound()) {
+            JobMetaData jobMetaData = bindingResult.get();
+            jobMetaData.getJobConfig().forEach((k, v) -> {
+                for (JobScheduleInfo info : v) {
+                    info.setJobGroup(k);
+                    this.configureJob(jobs, info);
                 }
-
             });
-
         }
         if (!jobs.isEmpty()) {
             registry.registerBeanDefinition("jobStarter", BeanDefinitionBuilder.genericBeanDefinition(StartSchedule.class)
