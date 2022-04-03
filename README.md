@@ -21,26 +21,31 @@ Quartz dynamic scheduling
 <details><summary>Configure Using Property</summary>
   
   * Create a jobClass by extending QuartzJobBean
-  * Add below properties in application.properties
-    * schedule.job.groups=propGroup
-    * schedule.job.propGroup.scheduleinfo={"cronExpression": "*/5 * * * * ? *","jobName": "someJob","jobClass": "com.scheduling.job.SomeJob1"}
+  * One job group can contain multiple job
+  * Add below properties in application.properties or any other property
+    * job.scheduler.jobConfig.[group][0].cronExpression=*/5 * * * * ? *
+    * job.scheduler.jobConfig.[group][0].jobName=someJob1
+    * job.scheduler.jobConfig.[group][0].jobClass=com.scheduling.job.SomeJob1
+    * job.scheduler.jobConfig.[group][0].jobDataMap[key]=value
+    
+    * job.scheduler.jobConfig.[group][1].cronExpression=*/5 * * * * ? *
+    * job.scheduler.jobConfig.[group][1].jobName=someJob
+    * job.scheduler.jobConfig.[group][1].jobClass=com.scheduling.job.SomeJob
+    * job.scheduler.jobConfig.[group][1].jobDataMap[key]=value
+    
+    * job.scheduler.jobConfig.[group1][1].cronExpression=*/5 * * * * ? *
+    * job.scheduler.jobConfig.[group1][1].jobName=someJob
+    * job.scheduler.jobConfig.[group1][1].jobClass=com.scheduling.job.SomeJob
+    * job.scheduler.jobConfig.[group1][1].jobDataMap[key]=value
+    
+  * above properties indicate two jobgroup **group** and **group1**. fist group contains two job , and second group contains one 
   
 </details>
 
-***
-<details><summary>Configure multiple jobs Using Property</summary>
-  
-  * One Group can have multiple jobs (delimter used **~**)
-  * Add below properties in application.properties
-    * schedule.job.groups=**propGroup~propGroup1**
-    * schedule.job.**propGroup**.scheduleinfo={"cronExpression": "*/5 * * * * ? *","jobName": "someJob","jobClass": "com.scheduling.job.SomeJob"}**~**{"cronExpression": "*/5 * * * * ? *","jobName": "someJob","jobClass": "com.scheduling.job.SomeJob1"}
-    * schedule.job.**propGroup1**.scheduleinfo={"cronExpression": "*/5 * * * * ? *","jobName": "someJob","jobClass": "com.scheduling.job.SomeJob"}**~**{"cronExpression": "*/5 * * * * ? *","jobName": "someJob","jobClass": "com.scheduling.job.SomeJob1"}
-  
-</details>
 
-***
 <details><summary>How to modify job data map programmatically</summary>
   
-  * Create a bean by implementing JobDataMapConfigurer 
+  * Create a bean by implementing JobDataMapConfigurer.
+  * Each JobDataMapConfigurer must qualify with job name.@Component(value="jobName")  
   
 </details>
