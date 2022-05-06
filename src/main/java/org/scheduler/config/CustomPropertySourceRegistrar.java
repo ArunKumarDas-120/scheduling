@@ -4,16 +4,14 @@ import org.scheduler.annotaion.EnableCustomPropertySource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.PropertiesFactoryBean;
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
-import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
@@ -21,38 +19,61 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.AnnotationMetadata;
 
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 
 public class CustomPropertySourceRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware, BeanFactoryAware {
 
     private Environment environment;
     private BeanFactory beanFactory;
+    private final YamlPropertiesFactoryBean yamlPropertiesFactoryBean = new YamlPropertiesFactoryBean();
+    private final PropertiesFactoryBean propertiesFactoryBean = new PropertiesFactoryBean();
+
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         AnnotationAttributes annotationAttributes = new AnnotationAttributes(
                 importingClassMetadata.getAnnotationAttributes(EnableCustomPropertySource.class.getCanonicalName()));
-        BindResult<String[]> result =  Binder.get(this.environment).bind("property.source.location", String[].class);
-        if(result.isBound()){
-            String [] locations = result.get();
-            Resource[] resource =  new Resource[locations.length];
-            IntStream.range(0,result.get().length).forEach(i->{
-                if(locations[i].startsWith("Classpath:")){
-                    resource[i] = new ClassPathResource(locations[i].replace("Classpath:",""));
+        BindResult<String[]> result = Binder.get(this.environment).bind("property.source.location", String[].class);
+        if (result.isBound()) {
+            try {
+                List<Resource> propList = new ArrayList<>();
+                List<Resource> ymlPropList = new ArrayList<>();
+                String[] propertyLocations = result.get();
+                for (int i = 0; i < result.get().length; i++) {
+                    Resource resource;
+                    if (propertyLocations[i].startsWith("Classpath:")) {
+                        resource = new ClassPathResource(propertyLocations[i].replace("Classpath:", ""));
+                        if (propertyLocations[i].endsWith("yml"))
+                            ymlPropList.add(resource);
+                        else
+                            propList.add(resource);
+                    } else if (propertyLocations[i].startsWith("File:")) {
+                        resource = new FileSystemResource(propertyLocations[i].replace("File:", ""));
+                        if (propertyLocations[i].endsWith("yml"))
+                            ymlPropList.add(resource);
+                        else
+                            propList.add(resource);
+                    }
                 }
-                else if(locations[i].startsWith("File:")){
-                    resource[i] = new FileSystemResource(locations[i].replace("File:",""));
-                }
-            });
-            registry.registerBeanDefinition("customPropertySource",
-                    BeanDefinitionBuilder.genericBeanDefinition(CustomPropertySource.class)
-                            .setScope(ConfigurableListableBeanFactory.SCOPE_SINGLETON)
-                            .addPropertyValue("valueDecoder", getBean())
-                            .addPropertyValue("locations",resource)
-                            .getBeanDefinition()
-            );
+                propertiesFactoryBean.setLocations(propList.toArray(new Resource[]{}));
+                propertiesFactoryBean.afterPropertiesSet();
+                yamlPropertiesFactoryBean.setResources(ymlPropList.toArray(new Resource[]{}));
+                Properties props = new Properties();
+                props.putAll(yamlPropertiesFactoryBean.getObject());
+                props.putAll(propertiesFactoryBean.getObject());
+                CustomPropertySource customPropertySource = new CustomPropertySource();
+                registry.registerBeanDefinition("customPropertySource", BeanDefinitionBuilder.genericBeanDefinition(CustomPropertySource.class, () -> {
+                    customPropertySource.setProperties(props);
+                    customPropertySource.setIgnoreResourceNotFound(Boolean.TRUE);
+                    customPropertySource.setValueDecoder(getBean());
+                    return customPropertySource;
+                }).setScope("singleton").getBeanDefinition());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
-
     }
 
     @Override
@@ -61,14 +82,14 @@ public class CustomPropertySourceRegistrar implements ImportBeanDefinitionRegist
     }
 
 
-    private ValueDecoder getBean(){
+    private ValueDecoder getBean() {
         ValueDecoder decode = null;
         try {
             decode = this.beanFactory.getBean(ValueDecoder.class);
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
-       return decode;
+        return decode;
     }
 
     @Override
