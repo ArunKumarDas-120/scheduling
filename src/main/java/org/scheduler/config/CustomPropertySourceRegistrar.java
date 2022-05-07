@@ -21,6 +21,7 @@ import org.springframework.core.type.AnnotationMetadata;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
 
@@ -42,20 +43,12 @@ public class CustomPropertySourceRegistrar implements ImportBeanDefinitionRegist
                 List<Resource> ymlPropList = new ArrayList<>();
                 String[] propertyLocations = result.get();
                 for (int i = 0; i < result.get().length; i++) {
-                    Resource resource;
-                    if (propertyLocations[i].startsWith("Classpath:")) {
-                        resource = new ClassPathResource(propertyLocations[i].replace("Classpath:", ""));
-                        if (propertyLocations[i].endsWith("yml"))
-                            ymlPropList.add(resource);
+                    this.getResource(propertyLocations[i]).ifPresent(r -> {
+                        if (r.getFilename().endsWith("yml"))
+                            ymlPropList.add(r);
                         else
-                            propList.add(resource);
-                    } else if (propertyLocations[i].startsWith("File:")) {
-                        resource = new FileSystemResource(propertyLocations[i].replace("File:", ""));
-                        if (propertyLocations[i].endsWith("yml"))
-                            ymlPropList.add(resource);
-                        else
-                            propList.add(resource);
-                    }
+                            propList.add(r);
+                    });
                 }
                 propertiesFactoryBean.setLocations(propList.toArray(new Resource[]{}));
                 propertiesFactoryBean.afterPropertiesSet();
@@ -95,5 +88,14 @@ public class CustomPropertySourceRegistrar implements ImportBeanDefinitionRegist
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
+    }
+
+    private Optional<Resource> getResource(String resourceName) {
+        Resource resource = null;
+        if (resourceName.startsWith("Classpath:"))
+            resource = new ClassPathResource(resourceName.replace("Classpath:", ""));
+        else if (resourceName.startsWith("File:"))
+            resource = new FileSystemResource(resourceName.replace("File:", ""));
+        return Optional.ofNullable(resource);
     }
 }
