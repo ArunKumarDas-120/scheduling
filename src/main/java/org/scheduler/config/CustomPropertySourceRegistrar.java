@@ -1,6 +1,9 @@
 package org.scheduler.config;
 
 import org.scheduler.annotaion.EnableCustomPropertySource;
+import org.scheduler.model.PropertySourceConfig;
+import org.scheduler.resource.DataBaseResource;
+import org.scheduler.service.DataBasePropertiesFactoryBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -31,28 +34,27 @@ public class CustomPropertySourceRegistrar implements ImportBeanDefinitionRegist
     private BeanFactory beanFactory;
     private final YamlPropertiesFactoryBean yamlPropertiesFactoryBean = new YamlPropertiesFactoryBean();
     private final PropertiesFactoryBean propertiesFactoryBean = new PropertiesFactoryBean();
+    private final DataBasePropertiesFactoryBean dataBasePropertiesFactoryBean = new DataBasePropertiesFactoryBean();
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         AnnotationAttributes annotationAttributes = new AnnotationAttributes(
                 importingClassMetadata.getAnnotationAttributes(EnableCustomPropertySource.class.getCanonicalName()));
-        BindResult<String[]> result = Binder.get(this.environment).bind("property.source.location", String[].class);
+        BindResult<PropertySourceConfig> result = Binder.get(this.environment).bind("property.source", PropertySourceConfig.class);
         if (result.isBound()) {
             try {
                 List<Resource> propList = new ArrayList<>();
                 List<Resource> ymlPropList = new ArrayList<>();
-                String[] propertyLocations = result.get();
-                for (int i = 0; i < result.get().length; i++) {
-                    this.getResource(propertyLocations[i]).ifPresent(r -> {
-                        if (r.getFilename().endsWith("yml"))
-                            ymlPropList.add(r);
-                        else
-                            propList.add(r);
-                    });
-                }
+                List<Resource> dbList = new ArrayList<>();
+
+                result.get().getConfig().forEach(s -> {
+                    this.decodeResources(s, propList, ymlPropList, dbList);
+                });
+
                 propertiesFactoryBean.setLocations(propList.toArray(new Resource[]{}));
                 propertiesFactoryBean.afterPropertiesSet();
                 yamlPropertiesFactoryBean.setResources(ymlPropList.toArray(new Resource[]{}));
+                dataBasePropertiesFactoryBean.setLocations(dbList.toArray(new Resource[]{}));
                 Properties props = new Properties();
                 props.putAll(yamlPropertiesFactoryBean.getObject());
                 props.putAll(propertiesFactoryBean.getObject());
@@ -90,12 +92,29 @@ public class CustomPropertySourceRegistrar implements ImportBeanDefinitionRegist
         this.beanFactory = beanFactory;
     }
 
-    private Optional<Resource> getResource(String resourceName) {
+    private void decodeResources(PropertySourceConfig.PropertySource propertySource,
+                                 List<Resource> propList,
+                                 List<Resource> ymlPropList
+            , List<Resource> dbList) {
         Resource resource = null;
-        if (resourceName.startsWith("Classpath:"))
-            resource = new ClassPathResource(resourceName.replace("Classpath:", ""));
-        else if (resourceName.startsWith("File:"))
-            resource = new FileSystemResource(resourceName.replace("File:", ""));
-        return Optional.ofNullable(resource);
+        if (propertySource.getFrom().equalsIgnoreCase("Classpath"))
+            resource = new ClassPathResource(propertySource.getName().concat(".").concat(propertySource.getType()));
+        else if (propertySource.getFrom().equalsIgnoreCase("File"))
+            resource = new FileSystemResource(propertySource.getName().concat(".").concat(propertySource.getType()));
+        else if (propertySource.getFrom().equalsIgnoreCase("DataBase"))
+            resource = new DataBaseResource();
+        Optional.ofNullable(resource).ifPresent(r -> {
+            if (propertySource.getFrom().equalsIgnoreCase("Classpath")
+                    || propertySource.getFrom().equalsIgnoreCase("File")) {
+                if (propertySource.getType().equalsIgnoreCase("properties"))
+                    propList.add(r);
+                else if (propertySource.getType().equalsIgnoreCase("yml"))
+                    ymlPropList.add(r);
+            } else if (propertySource.getFrom().equalsIgnoreCase("DataBase")) {
+                dbList.add(r);
+            }
+        });
+
+
     }
 }
